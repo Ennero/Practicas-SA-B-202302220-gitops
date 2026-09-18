@@ -25,7 +25,9 @@ LOG_LEVEL: {{ default "info" .Values.profile.logLevel | quote }}
 {{- end -}}
 
 {{- define "sa-platform.serviceImage" -}}
-{{- if .root.Values.profile.imageTag -}}
+{{- if .root.Values.profile.imageRepository -}}
+{{ .root.Values.profile.imageRepository }}:{{ default "1.25-alpine" .root.Values.profile.imageTag }}
+{{- else if .root.Values.profile.imageTag -}}
 p5-{{ .service.name }}:{{ .root.Values.profile.imageTag }}
 {{- else -}}
 {{ .service.image }}
