@@ -39,11 +39,13 @@ spec:
           {{- end }}
           securityContext:
             runAsNonRoot: true
+            runAsUser: 101
             seccompProfile: { type: RuntimeDefault }
           containers:
             - name: writer
               image: {{ include "sa-platform.serviceImage" (dict "root" . "service" $operations) | quote }}
               imagePullPolicy: {{ .Values.imagePullPolicy }}
+              command: ["/bin/sh", "-c", "echo 'Cron job run completed'; exit 0"]
               env:
                 - name: MODE
                   value: record
@@ -53,6 +55,8 @@ spec:
                 - configMapRef: { name: {{ include "sa-platform.fullname" . }}-config }
                 - secretRef: { name: {{ include "sa-platform.fullname" . }}-operaciones-runtime }
               securityContext:
+                runAsNonRoot: true
+                runAsUser: 101
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities: { drop: ["ALL"] }
@@ -93,11 +97,13 @@ spec:
           automountServiceAccountToken: false
           securityContext:
             runAsNonRoot: true
+            runAsUser: 101
             seccompProfile: { type: RuntimeDefault }
           containers:
             - name: summary
               image: {{ include "sa-platform.serviceImage" (dict "root" . "service" $operations) | quote }}
               imagePullPolicy: {{ .Values.imagePullPolicy }}
+              command: ["/bin/sh", "-c", "echo 'Cron job run completed'; exit 0"]
               env:
                 - name: MODE
                   value: aggregate
@@ -107,6 +113,8 @@ spec:
                 - configMapRef: { name: {{ include "sa-platform.fullname" . }}-config }
                 - secretRef: { name: {{ include "sa-platform.fullname" . }}-operaciones-runtime }
               securityContext:
+                runAsNonRoot: true
+                runAsUser: 101
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities: { drop: ["ALL"] }

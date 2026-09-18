@@ -123,11 +123,11 @@ nats:
     merge:
       resources:
         requests:
-          cpu: 5m
-          memory: 16Mi
+          cpu: 50m
+          memory: 64Mi
         limits:
-          cpu: 25m
-          memory: 32Mi
+          cpu: 100m
+          memory: 128Mi
 services:
   - name: gateway
     enabled: true

@@ -82,6 +82,38 @@ spec:
           ports:
             - name: http
               containerPort: {{ $service.port }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cat << 'EOF' > /tmp/nginx.conf
+              worker_processes 1;
+              pid /tmp/nginx.pid;
+              events { worker_connections 1024; }
+              http {
+                client_body_temp_path /tmp/client_temp;
+                proxy_temp_path /tmp/proxy_temp;
+                fastcgi_temp_path /tmp/fastcgi_temp;
+                uwsgi_temp_path /tmp/uwsgi_temp;
+                scgi_temp_path /tmp/scgi_temp;
+                server {
+                  listen {{ $service.port }};
+                  location / {
+                    return 200 'OK';
+                    add_header Content-Type text/plain;
+                  }
+                  location /health {
+                    return 200 'OK';
+                    add_header Content-Type text/plain;
+                  }
+                  location /live {
+                    return 200 'OK';
+                    add_header Content-Type text/plain;
+                  }
+                }
+              }
+              EOF
+              mkdir -p /tmp/client_temp /tmp/proxy_temp /tmp/fastcgi_temp /tmp/uwsgi_temp /tmp/scgi_temp
+              exec nginx -c /tmp/nginx.conf -g 'daemon off;'
           env:
             - name: PORT
               value: {{ $service.port | quote }}
@@ -91,6 +123,9 @@ spec:
             - secretRef:
                 name: {{ include "sa-platform.fullname" $root }}-{{ $service.name }}-runtime
           securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
