@@ -10,9 +10,15 @@ metadata:
     {{- include "sa-platform.labels" $root | nindent 4 }}
 spec:
   scaleTargetRef:
+    {{- if eq $service.name "gateway" }}
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+    name: {{ $service.name }}
+    {{- else }}
     apiVersion: apps/v1
     kind: Deployment
     name: {{ $service.name }}
+    {{- end }}
   minReplicas: {{ if $root.Values.profile.minReplicas }}{{ $root.Values.profile.minReplicas }}{{ else }}{{ $service.autoscaling.minReplicas }}{{ end }}
   maxReplicas: {{ if $root.Values.profile.maxReplicas }}{{ $root.Values.profile.maxReplicas }}{{ else }}{{ $service.autoscaling.maxReplicas }}{{ end }}
   behavior:
