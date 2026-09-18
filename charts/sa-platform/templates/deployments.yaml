@@ -29,6 +29,9 @@ spec:
             templates:
               - templateName: {{ $service.name }}-smoke-analysis
         - setWeight: 100
+        - analysis:
+            templates:
+              - templateName: {{ $service.name }}-smoke-analysis
 {{- else }}
 apiVersion: apps/v1
 kind: Deployment
