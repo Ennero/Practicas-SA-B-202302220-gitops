@@ -1,0 +1,61 @@
+{{- $root := . -}}
+{{- range $service := .Values.services }}
+{{- if and $service.enabled $service.migrationJob }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "sa-platform.fullname" $root }}-{{ $service.name }}-migrate
+  namespace: {{ include "sa-platform.namespace" $root }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    {{- include "sa-platform.labels" $root | nindent 4 }}
+    p5.sa/service: {{ $service.name }}
+spec:
+  backoffLimit: 8
+  template:
+    metadata:
+      labels:
+        {{- include "sa-platform.labels" $root | nindent 8 }}
+        p5.sa/service: {{ $service.name }}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "sa-platform.fullname" $root }}-{{ $service.name }}
+      automountServiceAccountToken: false
+      {{- with $root.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: migrate
+          image: {{ include "sa-platform.serviceImage" (dict "root" $root "service" $service) | quote }}
+          imagePullPolicy: {{ $root.Values.imagePullPolicy }}
+          env:
+            - name: PORT
+              value: {{ $service.port | quote }}
+            - name: RUN_MIGRATIONS
+              value: "true"
+            - name: MIGRATION_ONLY
+              value: "true"
+          envFrom:
+            - configMapRef: { name: {{ include "sa-platform.fullname" $root }}-config }
+            - secretRef: { name: {{ include "sa-platform.fullname" $root }}-{{ $service.name }}-runtime }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            {{- toYaml $service.resources | nindent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+{{- end }}
+{{- end }}

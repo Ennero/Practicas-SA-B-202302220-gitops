@@ -1,0 +1,126 @@
+{{- $root := . -}}
+{{- range $service := .Values.services }}
+{{- if and $service.enabled $service.deployment }}
+{{- if eq $service.name "gateway" }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ $service.name }}
+  namespace: {{ include "sa-platform.namespace" $root }}
+  labels:
+    {{- include "sa-platform.labels" $root | nindent 4 }}
+    app.kubernetes.io/name: {{ $service.name }}
+    app.kubernetes.io/instance: {{ $root.Release.Name }}
+spec:
+  replicas: {{ if $root.Values.profile.minReplicas }}{{ $root.Values.profile.minReplicas }}{{ else }}{{ $service.autoscaling.minReplicas }}{{ end }}
+  strategy:
+    canary:
+      canaryService: {{ $service.name }}-canary
+      stableService: {{ $service.name }}
+      steps:
+        - setWeight: 20
+        - pause: { duration: 15s }
+        - analysis:
+            templates:
+              - templateName: {{ $service.name }}-smoke-analysis
+        - setWeight: 50
+        - pause: { duration: 15s }
+        - analysis:
+            templates:
+              - templateName: {{ $service.name }}-smoke-analysis
+        - setWeight: 100
+{{- else }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $service.name }}
+  namespace: {{ include "sa-platform.namespace" $root }}
+  labels:
+    {{- include "sa-platform.labels" $root | nindent 4 }}
+    app.kubernetes.io/name: {{ $service.name }}
+    app.kubernetes.io/instance: {{ $root.Release.Name }}
+spec:
+  replicas: {{ if $root.Values.profile.minReplicas }}{{ $root.Values.profile.minReplicas }}{{ else }}{{ $service.autoscaling.minReplicas }}{{ end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+{{- end }}
+  selector:
+    matchLabels:
+      p5.sa/service: {{ $service.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "sa-platform.labels" $root | nindent 8 }}
+        app.kubernetes.io/name: {{ $service.name }}
+        p5.sa/service: {{ $service.name }}
+      annotations:
+        checksum/config: {{ include "sa-platform.configData" $root | sha256sum }}
+    spec:
+      serviceAccountName: sa-platform-runner
+      automountServiceAccountToken: false
+      {{- with $root.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{ $service.name }}
+          image: {{ include "sa-platform.serviceImage" (dict "root" $root "service" $service) | quote }}
+          imagePullPolicy: {{ $root.Values.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $service.port }}
+          env:
+            - name: PORT
+              value: {{ $service.port | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "sa-platform.fullname" $root }}-config
+            - secretRef:
+                name: {{ include "sa-platform.fullname" $root }}-{{ $service.name }}-runtime
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- if $root.Values.profile.resources }}
+            {{- toYaml $root.Values.profile.resources | nindent 12 }}
+            {{- else }}
+            {{- toYaml $service.resources | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+{{- end }}
+{{- end }}

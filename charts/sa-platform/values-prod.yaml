@@ -1,0 +1,15 @@
+imagePullPolicy: IfNotPresent
+profile:
+  name: prod
+  imageTag: "1.0.0-prod"
+  logLevel: warn
+  minReplicas: 3
+  maxReplicas: 6
+  targetCPU: 70
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: 750m, memory: 512Mi }
+autoscaling:
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300

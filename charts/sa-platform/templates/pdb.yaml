@@ -1,0 +1,18 @@
+{{- $root := . -}}
+{{- range $service := .Values.services }}
+{{- if and $service.enabled $service.deployment }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $service.name }}
+  namespace: {{ include "sa-platform.namespace" $root }}
+  labels:
+    {{- include "sa-platform.labels" $root | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      p5.sa/service: {{ $service.name }}
+---
+{{- end }}
+{{- end }}

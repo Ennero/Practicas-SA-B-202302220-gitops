@@ -1,0 +1,22 @@
+fullnameOverride: ""
+image:
+  repository: mariadb
+  tag: "11.4.5"
+  pullPolicy: IfNotPresent
+auth:
+  database: app
+  username: app
+  password: ${DB_PASSWORD}
+  rootpassword: ${DB_PASSWORD}
+persistence:
+  size: 1Gi
+  storageClass: ""
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 384Mi
+service:
+  port: 3306

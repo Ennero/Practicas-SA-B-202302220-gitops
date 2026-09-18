@@ -1,0 +1,29 @@
+{{- $root := . -}}
+{{- range $service := .Values.services }}
+{{- if and $service.enabled $service.deployment $service.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $service.name }}
+  namespace: {{ include "sa-platform.namespace" $root }}
+  labels:
+    {{- include "sa-platform.labels" $root | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $service.name }}
+  minReplicas: {{ if $root.Values.profile.minReplicas }}{{ $root.Values.profile.minReplicas }}{{ else }}{{ $service.autoscaling.minReplicas }}{{ end }}
+  maxReplicas: {{ if $root.Values.profile.maxReplicas }}{{ $root.Values.profile.maxReplicas }}{{ else }}{{ $service.autoscaling.maxReplicas }}{{ end }}
+  behavior:
+    {{- toYaml $root.Values.autoscaling.behavior | nindent 4 }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ if $root.Values.profile.targetCPU }}{{ $root.Values.profile.targetCPU }}{{ else }}{{ $service.autoscaling.targetCPU }}{{ end }}
+---
+{{- end }}
+{{- end }}

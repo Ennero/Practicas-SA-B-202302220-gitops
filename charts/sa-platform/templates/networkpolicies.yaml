@@ -1,0 +1,200 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: {{ include "sa-platform.namespace" . }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: {{ include "sa-platform.namespace" . }}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-external-to-gateway
+  namespace: {{ include "sa-platform.namespace" . }}
+spec:
+  podSelector:
+    matchLabels: { p5.sa/service: gateway }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - ipBlock: { cidr: 0.0.0.0/0 }
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-services
+  namespace: {{ include "sa-platform.namespace" . }}
+spec:
+  podSelector:
+    matchLabels: { p5.sa/service: gateway }
+  policyTypes: [Egress]
+  egress:
+    {{- range $service := .Values.services }}
+    {{- if and $service.enabled $service.deployment (ne $service.name "gateway") }}
+    - to:
+        - podSelector:
+            matchLabels: { p5.sa/service: {{ $service.name }} }
+      ports:
+        - protocol: TCP
+          port: {{ $service.port }}
+    {{- end }}
+    {{- end }}
+---
+{{- $root := . }}
+{{- range $service := .Values.services }}
+{{- if and $service.enabled $service.deployment (ne $service.name "gateway") }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-{{ $service.name }}-ingress
+  namespace: {{ include "sa-platform.namespace" $root }}
+spec:
+  podSelector:
+    matchLabels: { p5.sa/service: {{ $service.name }} }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { p5.sa/service: gateway }
+      ports:
+        - protocol: TCP
+          port: {{ $service.port }}
+    {{- if or (eq $service.name "cuentas") (eq $service.name "beneficiarios") }}
+    - from:
+        - podSelector:
+            matchLabels: { p5.sa/service: transacciones }
+      ports:
+        - protocol: TCP
+          port: {{ $service.port }}
+    {{- end }}
+---
+{{- end }}
+{{- end }}
+{{- range $service := .Values.services }}
+{{- if and $service.enabled $service.database }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-{{ $service.name }}-database
+  namespace: {{ include "sa-platform.namespace" $root }}
+spec:
+  podSelector:
+    matchLabels: { p5.sa/service: {{ $service.name }} }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: { p5.sa/database: {{ $service.database }} }
+      ports:
+        - protocol: TCP
+          port: 3306
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-{{ $service.name }}-to-{{ $service.database }}
+  namespace: {{ include "sa-platform.namespace" $root }}
+spec:
+  podSelector:
+    matchLabels: { p5.sa/database: {{ $service.database }} }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { p5.sa/service: {{ $service.name }} }
+      ports:
+        - protocol: TCP
+          port: 3306
+---
+{{- end }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-transacciones-and-notificaciones-to-nats
+  namespace: {{ include "sa-platform.namespace" . }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: p5.sa/service
+        operator: In
+        values: [transacciones, notificaciones, operaciones]
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: { app.kubernetes.io/name: nats }
+      ports:
+        - protocol: TCP
+          port: 4222
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-transacciones-to-validation-services
+  namespace: {{ include "sa-platform.namespace" . }}
+spec:
+  podSelector:
+    matchLabels: { p5.sa/service: transacciones }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: { p5.sa/service: cuentas }
+      ports:
+        - protocol: TCP
+          port: 3002
+    - to:
+        - podSelector:
+            matchLabels: { p5.sa/service: beneficiarios }
+      ports:
+        - protocol: TCP
+          port: 3003
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-apps-to-nats
+  namespace: {{ include "sa-platform.namespace" . }}
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: nats }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: p5.sa/service
+                operator: In
+                values: [transacciones, notificaciones, operaciones]
+      ports:
+        - protocol: TCP
+          port: 4222
+{{- end }}

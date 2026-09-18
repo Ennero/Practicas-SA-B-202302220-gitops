@@ -1,0 +1,58 @@
+{{- $root := . -}}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: gateway-smoke-analysis
+  namespace: {{ include "sa-platform.namespace" $root }}
+  labels:
+    {{- include "sa-platform.labels" $root | nindent 4 }}
+    app.kubernetes.io/name: gateway-smoke-analysis
+    app.kubernetes.io/instance: {{ $root.Release.Name }}
+spec:
+  metrics:
+    - name: canary-health-check
+      interval: 5s
+      count: 2
+      successCondition: result == "0"
+      failureLimit: 1
+      provider:
+        job:
+          spec:
+            backoffLimit: 1
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/name: smoke-check-job
+              spec:
+                restartPolicy: Never
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 1000
+                containers:
+                  - name: smoke-curl
+                    image: curlimages/curl:8.7.1
+                    command: ["/bin/sh", "-c"]
+                    args:
+                      - |
+                        echo "Ejecutando prueba de humo contra pod canary..."
+                        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://gateway-canary:8080/health || echo "500")
+                        echo "Codigo HTTP recibido: $STATUS"
+                        if [ "$STATUS" = "200" ]; then
+                          echo "Canary saludable (HTTP 200). Paso de analisis exitoso."
+                          exit 0
+                        else
+                          echo "Fallo en validacion canary (HTTP $STATUS != 200). Abortando."
+                          exit 1
+                        fi
+                    resources:
+                      requests:
+                        cpu: 50m
+                        memory: 64Mi
+                      limits:
+                        cpu: 100m
+                        memory: 128Mi
+                    securityContext:
+                      allowPrivilegeEscalation: false
+                      readOnlyRootFilesystem: true
+                      capabilities:
+                        drop: ["ALL"]
