@@ -2,7 +2,7 @@ imagePullPolicy: IfNotPresent
 profile:
   name: prod
   imageRepository: mirror.gcr.io/library/nginx
-  imageTag: "1.25-alpine"
+  imageTag: "1.0.0"
   logLevel: warn
   minReplicas: 3
   maxReplicas: 6
