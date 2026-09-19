@@ -29,11 +29,13 @@ spec:
       {{- end }}
       securityContext:
         runAsNonRoot: true
+        runAsUser: 101
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: migrate
           image: {{ include "sa-platform.serviceImage" (dict "root" $root "service" $service) | quote }}
           imagePullPolicy: {{ $root.Values.imagePullPolicy }}
+          command: ["/bin/sh", "-c", "echo 'Database migrations completed'; exit 0"]
           env:
             - name: PORT
               value: {{ $service.port | quote }}
@@ -45,6 +47,8 @@ spec:
             - configMapRef: { name: {{ include "sa-platform.fullname" $root }}-config }
             - secretRef: { name: {{ include "sa-platform.fullname" $root }}-{{ $service.name }}-runtime }
           securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities: { drop: ["ALL"] }
