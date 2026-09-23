@@ -11,7 +11,7 @@ applications:
     name: sa-sealed-secrets
     namespace: kube-system
     chart:
-      repoURL: https://sealed-secrets.github.io/sealed-secrets
+      repoURL: https://bitnami.github.io/sealed-secrets
       chart: sealed-secrets
       targetRevision: 2.16.1
 
@@ -55,7 +55,7 @@ applications:
       - values-prod.yaml
 
   platformStaging:
-    enabled: true
+    enabled: false
     name: sa-platform-staging
     namespace: staging
     path: p9/charts/sa-platform

@@ -17,8 +17,41 @@ spec:
     targetRevision: {{ .Values.applications.kyverno.chart.targetRevision }}
     helm:
       values: |
+        crds:
+          install: true
         admissionController:
           replicas: 1
+          resources:
+            requests:
+              cpu: 15m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+        backgroundController:
+          resources:
+            requests:
+              cpu: 15m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+        cleanupController:
+          resources:
+            requests:
+              cpu: 15m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+        reportsController:
+          resources:
+            requests:
+              cpu: 15m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
   destination:
     server: {{ .Values.spec.destination.server }}
     namespace: {{ .Values.applications.kyverno.namespace }}

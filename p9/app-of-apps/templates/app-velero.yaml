@@ -16,8 +16,61 @@ spec:
     chart: {{ .Values.applications.velero.chart.chart }}
     targetRevision: {{ .Values.applications.velero.chart.targetRevision }}
     helm:
-      valueFiles:
-        - {{ .Values.applications.velero.valuesPath }}
+      values: |
+        initContainers:
+          - name: velero-plugin-for-gcp
+            image: velero/velero-plugin-for-gcp:v1.10.0
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - mountPath: /target
+                name: plugins
+        configuration:
+          backupStorageLocation:
+            - name: default
+              provider: gcp
+              bucket: sa-p9-velero-backups-202302220
+              config:
+                serviceAccount: sa-p9-velero@project-0d3c28c7-a4e0-44ad-a4e.iam.gserviceaccount.com
+          volumeSnapshotLocation:
+            - name: default
+              provider: gcp
+              config:
+                zone: us-east1-b
+          defaultVolumesToFsBackup: true
+        serviceAccount:
+          server:
+            create: true
+            name: velero
+            annotations:
+              iam.gke.io/gcp-service-account: sa-p9-velero@project-0d3c28c7-a4e0-44ad-a4e.iam.gserviceaccount.com
+        credentials:
+          useSecret: false
+        deployNodeAgent: true
+        resources:
+          requests:
+            cpu: 15m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        nodeAgent:
+          resources:
+            requests:
+              cpu: 15m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+        schedules:
+          sa-p9-backup-schedule:
+            disabled: false
+            schedule: "0 */6 * * *"
+            template:
+              includedNamespaces:
+                - produccion
+              storageLocation: default
+              snapshotVolumes: true
+              ttl: 168h0m0s
   destination:
     server: {{ .Values.spec.destination.server }}
     namespace: {{ .Values.applications.velero.namespace }}
