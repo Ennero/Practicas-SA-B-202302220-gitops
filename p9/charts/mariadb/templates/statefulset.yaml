@@ -38,30 +38,30 @@ spec:
               command:
                 - sh
                 - -ec
-                - mariadb-admin ping --protocol=tcp -h 127.0.0.1 -u "$MARIADB_USER" -p"$MARIADB_PASSWORD"
-            initialDelaySeconds: 15
+                - mariadb-admin ping
+            initialDelaySeconds: 10
             periodSeconds: 5
-            timeoutSeconds: 5
-            failureThreshold: 30
+            timeoutSeconds: 3
+            failureThreshold: 60
           readinessProbe:
             exec:
               command:
                 - sh
                 - -ec
-                - mariadb-admin ping --protocol=tcp -h 127.0.0.1 -u "$MARIADB_USER" -p"$MARIADB_PASSWORD"
+                - mariadb-admin ping
             initialDelaySeconds: 5
             periodSeconds: 5
-            timeoutSeconds: 5
+            timeoutSeconds: 3
             failureThreshold: 12
           livenessProbe:
             exec:
               command:
                 - sh
                 - -ec
-                - mariadb-admin ping --protocol=tcp -h 127.0.0.1 -u "$MARIADB_USER" -p"$MARIADB_PASSWORD"
-            initialDelaySeconds: 30
+                - mariadb-admin ping
+            initialDelaySeconds: 20
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 3
             failureThreshold: 5
   volumeClaimTemplates:
     - metadata:
