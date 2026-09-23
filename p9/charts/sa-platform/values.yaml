@@ -32,6 +32,9 @@ secrets:
 auth-db:
   enabled: true
   fullnameOverride: auth-db
+  resources:
+    requests: { cpu: 15m, memory: 128Mi }
+    limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: auth
     username: p5_auth
@@ -41,6 +44,9 @@ auth-db:
 cuentas-db:
   enabled: true
   fullnameOverride: cuentas-db
+  resources:
+    requests: { cpu: 15m, memory: 128Mi }
+    limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: cuentas
     username: p5_cuentas
@@ -50,6 +56,9 @@ cuentas-db:
 beneficiarios-db:
   enabled: true
   fullnameOverride: beneficiarios-db
+  resources:
+    requests: { cpu: 15m, memory: 128Mi }
+    limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: beneficiarios
     username: p5_beneficiarios
@@ -59,6 +68,9 @@ beneficiarios-db:
 transacciones-db:
   enabled: true
   fullnameOverride: transacciones-db
+  resources:
+    requests: { cpu: 15m, memory: 128Mi }
+    limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: transacciones
     username: p5_transacciones
@@ -68,6 +80,9 @@ transacciones-db:
 notificaciones-db:
   enabled: true
   fullnameOverride: notificaciones-db
+  resources:
+    requests: { cpu: 15m, memory: 128Mi }
+    limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: notificaciones
     username: p5_notificaciones
@@ -77,6 +92,9 @@ notificaciones-db:
 operaciones-db:
   enabled: true
   fullnameOverride: operaciones-db
+  resources:
+    requests: { cpu: 15m, memory: 128Mi }
+    limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: operaciones
     username: p5_operaciones
@@ -114,8 +132,8 @@ nats:
     merge:
       resources:
         requests:
-          cpu: 50m
-          memory: 128Mi
+          cpu: 10m
+          memory: 64Mi
         limits:
           cpu: 250m
           memory: 256Mi
@@ -123,8 +141,8 @@ nats:
     merge:
       resources:
         requests:
-          cpu: 50m
-          memory: 64Mi
+          cpu: 10m
+          memory: 32Mi
         limits:
           cpu: 100m
           memory: 128Mi
