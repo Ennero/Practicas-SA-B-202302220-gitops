@@ -33,7 +33,7 @@ auth-db:
   enabled: true
   fullnameOverride: auth-db
   resources:
-    requests: { cpu: 10m, memory: 64Mi }
+    requests: { cpu: 2m, memory: 32Mi }
     limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: auth
@@ -45,7 +45,7 @@ cuentas-db:
   enabled: true
   fullnameOverride: cuentas-db
   resources:
-    requests: { cpu: 10m, memory: 64Mi }
+    requests: { cpu: 2m, memory: 32Mi }
     limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: cuentas
@@ -57,7 +57,7 @@ beneficiarios-db:
   enabled: true
   fullnameOverride: beneficiarios-db
   resources:
-    requests: { cpu: 10m, memory: 64Mi }
+    requests: { cpu: 2m, memory: 32Mi }
     limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: beneficiarios
@@ -69,7 +69,7 @@ transacciones-db:
   enabled: true
   fullnameOverride: transacciones-db
   resources:
-    requests: { cpu: 10m, memory: 64Mi }
+    requests: { cpu: 2m, memory: 32Mi }
     limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: transacciones
@@ -81,7 +81,7 @@ notificaciones-db:
   enabled: true
   fullnameOverride: notificaciones-db
   resources:
-    requests: { cpu: 10m, memory: 64Mi }
+    requests: { cpu: 2m, memory: 32Mi }
     limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: notificaciones
@@ -93,7 +93,7 @@ operaciones-db:
   enabled: true
   fullnameOverride: operaciones-db
   resources:
-    requests: { cpu: 10m, memory: 64Mi }
+    requests: { cpu: 2m, memory: 32Mi }
     limits: { cpu: 250m, memory: 256Mi }
   auth:
     database: operaciones
@@ -132,8 +132,8 @@ nats:
     merge:
       resources:
         requests:
-          cpu: 10m
-          memory: 64Mi
+          cpu: 2m
+          memory: 32Mi
         limits:
           cpu: 250m
           memory: 256Mi
@@ -141,8 +141,8 @@ nats:
     merge:
       resources:
         requests:
-          cpu: 10m
-          memory: 32Mi
+          cpu: 1m
+          memory: 16Mi
         limits:
           cpu: 100m
           memory: 128Mi
@@ -155,7 +155,7 @@ services:
     database: ""
     nodePort: 30080
     resources:
-      requests: { cpu: 10m, memory: 32Mi }
+      requests: { cpu: 2m, memory: 16Mi }
       limits: { cpu: 300m, memory: 192Mi }
     autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
   - name: auth
@@ -167,7 +167,7 @@ services:
     database: auth-db
     nodePort: 0
     resources:
-      requests: { cpu: 10m, memory: 32Mi }
+      requests: { cpu: 2m, memory: 16Mi }
       limits: { cpu: 500m, memory: 384Mi }
     autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
   - name: cuentas
@@ -178,7 +178,7 @@ services:
     database: cuentas-db
     nodePort: 0
     resources:
-      requests: { cpu: 10m, memory: 32Mi }
+      requests: { cpu: 2m, memory: 16Mi }
       limits: { cpu: 300m, memory: 192Mi }
     autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
   - name: beneficiarios
@@ -189,7 +189,7 @@ services:
     database: beneficiarios-db
     nodePort: 0
     resources:
-      requests: { cpu: 10m, memory: 32Mi }
+      requests: { cpu: 2m, memory: 16Mi }
       limits: { cpu: 300m, memory: 192Mi }
     autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
   - name: transacciones
@@ -200,7 +200,7 @@ services:
     database: transacciones-db
     nodePort: 0
     resources:
-      requests: { cpu: 10m, memory: 32Mi }
+      requests: { cpu: 2m, memory: 16Mi }
       limits: { cpu: 350m, memory: 256Mi }
     autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
   - name: notificaciones
@@ -212,7 +212,7 @@ services:
     database: notificaciones-db
     nodePort: 0
     resources:
-      requests: { cpu: 10m, memory: 32Mi }
+      requests: { cpu: 2m, memory: 16Mi }
       limits: { cpu: 500m, memory: 384Mi }
     autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
   - name: operaciones
@@ -223,7 +223,7 @@ services:
     database: operaciones-db
     nodePort: 0
     resources:
-      requests: { cpu: 10m, memory: 32Mi }
+      requests: { cpu: 2m, memory: 16Mi }
       limits: { cpu: 150m, memory: 128Mi }
 
 cronjobs:

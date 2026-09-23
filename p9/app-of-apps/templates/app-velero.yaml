@@ -49,16 +49,16 @@ spec:
         deployNodeAgent: true
         resources:
           requests:
-            cpu: 15m
-            memory: 64Mi
+            cpu: 2m
+            memory: 32Mi
           limits:
             cpu: 250m
             memory: 256Mi
         nodeAgent:
           resources:
             requests:
-              cpu: 15m
-              memory: 64Mi
+              cpu: 2m
+              memory: 32Mi
             limits:
               cpu: 250m
               memory: 256Mi
