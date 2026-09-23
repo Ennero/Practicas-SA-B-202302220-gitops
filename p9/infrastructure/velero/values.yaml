@@ -18,7 +18,7 @@ configuration:
     - name: default
       provider: gcp
       config:
-        zone: us-central1-a
+        zone: us-east1-b
   defaultVolumesToFsBackup: true
 
 serviceAccount:

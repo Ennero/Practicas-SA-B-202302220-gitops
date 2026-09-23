@@ -24,4 +24,4 @@ metadata:
 spec:
   provider: gcp
   config:
-    zone: us-central1-a
+    zone: us-east1-b
