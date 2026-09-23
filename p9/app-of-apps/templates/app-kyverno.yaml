@@ -1,0 +1,57 @@
+{{- if .Values.applications.kyverno.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.applications.kyverno.name }}
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sa-platform-root
+    course: sa-b-2026
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.applications.kyverno.chart.repoURL }}
+    chart: {{ .Values.applications.kyverno.chart.chart }}
+    targetRevision: {{ .Values.applications.kyverno.chart.targetRevision }}
+    helm:
+      values: |
+        admissionController:
+          replicas: 1
+  destination:
+    server: {{ .Values.spec.destination.server }}
+    namespace: {{ .Values.applications.kyverno.namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.applications.kyverno.name }}-policies
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sa-platform-root
+    course: sa-b-2026
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.spec.source.repoURL }}
+    targetRevision: {{ .Values.spec.source.targetRevision }}
+    path: {{ .Values.applications.kyverno.policies.path }}
+  destination:
+    server: {{ .Values.spec.destination.server }}
+    namespace: {{ .Values.applications.kyverno.namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}

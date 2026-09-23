@@ -1,0 +1,27 @@
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: default
+  namespace: velero
+  labels:
+    app.kubernetes.io/name: velero-bsl
+    course: sa-b-2026
+spec:
+  provider: gcp
+  objectStorage:
+    bucket: sa-p9-velero-backups-202302220
+  config:
+    serviceAccount: sa-p9-velero@project-0d3c28c7-a4e0-44ad-a4e.iam.gserviceaccount.com
+---
+apiVersion: velero.io/v1
+kind: VolumeSnapshotLocation
+metadata:
+  name: default
+  namespace: velero
+  labels:
+    app.kubernetes.io/name: velero-vsl
+    course: sa-b-2026
+spec:
+  provider: gcp
+  config:
+    zone: us-central1-a

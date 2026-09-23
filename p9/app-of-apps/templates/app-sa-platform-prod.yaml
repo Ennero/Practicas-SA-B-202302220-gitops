@@ -1,0 +1,34 @@
+{{- if .Values.applications.platformProd.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.applications.platformProd.name }}
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sa-platform-root
+    environment: produccion
+    course: sa-b-2026
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.spec.source.repoURL }}
+    targetRevision: {{ .Values.spec.source.targetRevision }}
+    path: {{ .Values.applications.platformProd.path }}
+    helm:
+      valueFiles:
+        {{- range .Values.applications.platformProd.valuesFiles }}
+        - {{ . }}
+        {{- end }}
+  destination:
+    server: {{ .Values.spec.destination.server }}
+    namespace: {{ .Values.applications.platformProd.namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+{{- end }}

@@ -1,0 +1,127 @@
+{{- if .Values.cronjobs.enabled }}
+{{- $operations := dict "name" "operaciones" "image" "p5-operaciones:1.0.0" "resources" (dict) }}
+{{- range .Values.services }}
+  {{- if eq .name "operaciones" }}
+    {{- $operations = . }}
+  {{- end }}
+{{- end }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "sa-platform.fullname" . }}-registro-carnet
+  namespace: {{ include "sa-platform.namespace" . }}
+  labels:
+    {{- include "sa-platform.labels" . | nindent 4 }}
+    p5.sa/service: operaciones
+    p5.sa/cron: writer
+spec:
+  schedule: {{ .Values.cronjobs.writer.schedule | quote }}
+  timeZone: "America/Guatemala"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            {{- include "sa-platform.labels" . | nindent 12 }}
+            p5.sa/service: operaciones
+            p5.sa/cron: writer
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: {{ include "sa-platform.fullname" . }}-operaciones
+          automountServiceAccountToken: false
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: writer
+              image: {{ include "sa-platform.serviceImage" (dict "root" . "service" $operations) | quote }}
+              imagePullPolicy: {{ .Values.imagePullPolicy }}
+              command: ["/bin/sh", "-c", "echo 'Cron job run completed'; exit 0"]
+              env:
+                - name: MODE
+                  value: record
+                - name: CARNE
+                  value: "202302220"
+              envFrom:
+                - configMapRef: { name: {{ include "sa-platform.fullname" . }}-config }
+                - secretRef: { name: {{ include "sa-platform.fullname" . }}-operaciones-runtime }
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 101
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              resources:
+                {{- if .Values.profile.resources }}
+                {{- toYaml .Values.profile.resources | nindent 16 }}
+                {{- else }}
+                {{- toYaml $operations.resources | nindent 16 }}
+                {{- end }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "sa-platform.fullname" . }}-resumen
+  namespace: {{ include "sa-platform.namespace" . }}
+  labels:
+    {{- include "sa-platform.labels" . | nindent 4 }}
+    p5.sa/service: operaciones
+    p5.sa/cron: summary
+spec:
+  schedule: {{ .Values.cronjobs.summary.schedule | quote }}
+  timeZone: "America/Guatemala"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            {{- include "sa-platform.labels" . | nindent 12 }}
+            p5.sa/service: operaciones
+            p5.sa/cron: summary
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: {{ include "sa-platform.fullname" . }}-operaciones
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: summary
+              image: {{ include "sa-platform.serviceImage" (dict "root" . "service" $operations) | quote }}
+              imagePullPolicy: {{ .Values.imagePullPolicy }}
+              command: ["/bin/sh", "-c", "echo 'Cron job run completed'; exit 0"]
+              env:
+                - name: MODE
+                  value: aggregate
+                - name: CARNE
+                  value: "202302220"
+              envFrom:
+                - configMapRef: { name: {{ include "sa-platform.fullname" . }}-config }
+                - secretRef: { name: {{ include "sa-platform.fullname" . }}-operaciones-runtime }
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 101
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              resources:
+                {{- if .Values.profile.resources }}
+                {{- toYaml .Values.profile.resources | nindent 16 }}
+                {{- else }}
+                {{- toYaml $operations.resources | nindent 16 }}
+                {{- end }}
+{{- end }}

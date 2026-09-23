@@ -1,0 +1,30 @@
+{{- if .Values.applications.velero.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.applications.velero.name }}
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sa-platform-root
+    course: sa-b-2026
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.applications.velero.chart.repoURL }}
+    chart: {{ .Values.applications.velero.chart.chart }}
+    targetRevision: {{ .Values.applications.velero.chart.targetRevision }}
+    helm:
+      valueFiles:
+        - {{ .Values.applications.velero.valuesPath }}
+  destination:
+    server: {{ .Values.spec.destination.server }}
+    namespace: {{ .Values.applications.velero.namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}

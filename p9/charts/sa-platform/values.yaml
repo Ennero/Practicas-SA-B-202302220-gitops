@@ -1,0 +1,234 @@
+fullnameOverride: ""
+
+imagePullPolicy: IfNotPresent
+imagePullSecrets: []
+
+# Tipo de exposición del Gateway. P5 local usa NodePort; P6 puede sobrescribirlo
+# con LoadBalancer para obtener una IP pública en un clúster administrado.
+exposure:
+  gateway:
+    type: NodePort
+
+config:
+  corsOrigin: http://localhost:30080,http://127.0.0.1:30080
+
+profile:
+  name: base
+  imageTag: ""
+  logLevel: info
+  minReplicas: 0
+  maxReplicas: 0
+  targetCPU: 0
+  resources: {}
+
+# Valores falsos y seguros para permitir helm lint/template. Nunca instalar así:
+# copie values.example.yaml a values.local.yaml y sustituya cada marcador.
+secrets:
+  jwtSecret: REPLACE_ME_JWT_SECRET_202302220
+  aesKey: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+  hmacPepper: REPLACE_ME_HMAC_PEPPER_202302220
+  natstoken: ${NATS_TOKEN}
+
+auth-db:
+  enabled: true
+  fullnameOverride: auth-db
+  auth:
+    database: auth
+    username: p5_auth
+    password: ${DB_PASSWORD}
+    rootpassword: ${DB_PASSWORD}
+
+cuentas-db:
+  enabled: true
+  fullnameOverride: cuentas-db
+  auth:
+    database: cuentas
+    username: p5_cuentas
+    password: ${DB_PASSWORD}
+    rootpassword: ${DB_PASSWORD}
+
+beneficiarios-db:
+  enabled: true
+  fullnameOverride: beneficiarios-db
+  auth:
+    database: beneficiarios
+    username: p5_beneficiarios
+    password: ${DB_PASSWORD}
+    rootpassword: ${DB_PASSWORD}
+
+transacciones-db:
+  enabled: true
+  fullnameOverride: transacciones-db
+  auth:
+    database: transacciones
+    username: p5_transacciones
+    password: ${DB_PASSWORD}
+    rootpassword: ${DB_PASSWORD}
+
+notificaciones-db:
+  enabled: true
+  fullnameOverride: notificaciones-db
+  auth:
+    database: notificaciones
+    username: p5_notificaciones
+    password: ${DB_PASSWORD}
+    rootpassword: ${DB_PASSWORD}
+
+operaciones-db:
+  enabled: true
+  fullnameOverride: operaciones-db
+  auth:
+    database: operaciones
+    username: p5_operaciones
+    password: ${DB_PASSWORD}
+    rootpassword: ${DB_PASSWORD}
+
+nats:
+  enabled: true
+  fullnameOverride: nats
+  natsBox:
+    enabled: false
+  serviceAccount:
+    enabled: true
+    name: p5-nats
+    merge:
+      automountServiceAccountToken: false
+  config:
+    merge:
+      authorization:
+        token: ${NATS_TOKEN}
+    jetstream:
+      enabled: true
+      fileStore:
+        enabled: true
+        pvc:
+          enabled: true
+          size: 1Gi
+  container:
+    env:
+      NATS_TOKEN:
+        valueFrom:
+          secretKeyRef:
+            name: p5-nats-auth
+            key: token
+    merge:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 250m
+          memory: 256Mi
+  reloader:
+    merge:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+services:
+  - name: gateway
+    enabled: true
+    deployment: true
+    image: p5-gateway:1.0.2
+    port: 8080
+    database: ""
+    nodePort: 30080
+    resources:
+      requests: { cpu: 50m, memory: 64Mi }
+      limits: { cpu: 300m, memory: 192Mi }
+    autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
+  - name: auth
+    enabled: true
+    deployment: true
+    migrationJob: true
+    image: p5-auth:1.0.2
+    port: 3001
+    database: auth-db
+    nodePort: 0
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits: { cpu: 500m, memory: 384Mi }
+    autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
+  - name: cuentas
+    enabled: true
+    deployment: true
+    image: p5-cuentas:1.0.2
+    port: 3002
+    database: cuentas-db
+    nodePort: 0
+    resources:
+      requests: { cpu: 50m, memory: 64Mi }
+      limits: { cpu: 300m, memory: 192Mi }
+    autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
+  - name: beneficiarios
+    enabled: true
+    deployment: true
+    image: p5-beneficiarios:1.0.2
+    port: 3003
+    database: beneficiarios-db
+    nodePort: 0
+    resources:
+      requests: { cpu: 50m, memory: 64Mi }
+      limits: { cpu: 300m, memory: 192Mi }
+    autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
+  - name: transacciones
+    enabled: true
+    deployment: true
+    image: p5-transacciones:1.0.2
+    port: 3004
+    database: transacciones-db
+    nodePort: 0
+    resources:
+      requests: { cpu: 50m, memory: 64Mi }
+      limits: { cpu: 350m, memory: 256Mi }
+    autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
+  - name: notificaciones
+    enabled: true
+    deployment: true
+    migrationJob: true
+    image: p5-notificaciones:1.0.2
+    port: 3005
+    database: notificaciones-db
+    nodePort: 0
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits: { cpu: 500m, memory: 384Mi }
+    autoscaling: { enabled: true, minReplicas: 1, maxReplicas: 2, targetCPU: 70 }
+  - name: operaciones
+    enabled: true
+    deployment: false
+    image: p5-operaciones:1.0.2
+    port: 0
+    database: operaciones-db
+    nodePort: 0
+    resources:
+      requests: { cpu: 25m, memory: 32Mi }
+      limits: { cpu: 150m, memory: 128Mi }
+
+cronjobs:
+  enabled: true
+  writer:
+    schedule: "*/2 * * * *"
+  summary:
+    schedule: "*/10 * * * *"
+
+autoscaling:
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 30
+
+networkPolicy:
+  enabled: true
+
+resourceQuota:
+  requestsCpu: "4"
+  requestsMemory: 5Gi
+  limitsCpu: "12"
+  limitsMemory: 8Gi

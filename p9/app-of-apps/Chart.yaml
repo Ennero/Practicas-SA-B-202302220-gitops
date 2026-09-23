@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sa-platform-root-app
+description: "Application raíz del patrón App-of-Apps para ArgoCD - Práctica 9"
+version: 1.0.0
+appVersion: "1.0.0"
+type: application

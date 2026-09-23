@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "mariadb.fullname" . }}-pdb
+  labels:
+    {{- include "mariadb.labels" . | nindent 4 }}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      p5.sa/database: {{ include "mariadb.fullname" . }}

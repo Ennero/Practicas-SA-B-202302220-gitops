@@ -1,0 +1,23 @@
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: sa-p9-backup-schedule
+  namespace: velero
+  labels:
+    app.kubernetes.io/name: velero-schedule
+    course: sa-b-2026
+spec:
+  # Ejecución cada 6 horas: 00:00, 06:00, 12:00, 18:00 UTC
+  schedule: "0 */6 * * *"
+  template:
+    includedNamespaces:
+      - produccion
+      - staging
+    # Retención de 7 días (168 horas)
+    ttl: 168h0m0s
+    snapshotVolumes: true
+    defaultVolumesToFsBackup: true
+    storageLocation: default
+    volumeSnapshotLocations:
+      - default
+    hooks: {}

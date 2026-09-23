@@ -1,0 +1,64 @@
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://github.com/Ennero/Practicas-SA-B-202302220-gitops.git
+    targetRevision: main
+
+applications:
+  sealedSecrets:
+    enabled: true
+    name: sa-sealed-secrets
+    namespace: kube-system
+    chart:
+      repoURL: https://sealed-secrets.github.io/sealed-secrets
+      chart: sealed-secrets
+      targetRevision: 2.16.1
+
+  kyverno:
+    enabled: true
+    name: sa-kyverno
+    namespace: kyverno
+    chart:
+      repoURL: https://kyverno.github.io/kyverno/
+      chart: kyverno
+      targetRevision: 3.2.6
+    policies:
+      path: p9/infrastructure/kyverno/policies
+
+  argoRollouts:
+    enabled: true
+    name: sa-argo-rollouts
+    namespace: argo-rollouts
+    chart:
+      repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-rollouts
+      targetRevision: 2.37.7
+
+  velero:
+    enabled: true
+    name: sa-velero
+    namespace: velero
+    chart:
+      repoURL: https://vmware-tanzu.github.io/helm-charts
+      chart: velero
+      targetRevision: 7.2.2
+    valuesPath: p9/infrastructure/velero/values.yaml
+
+  platformProd:
+    enabled: true
+    name: sa-platform-prod
+    namespace: produccion
+    path: p9/charts/sa-platform
+    valuesFiles:
+      - values.yaml
+      - values-prod.yaml
+
+  platformStaging:
+    enabled: true
+    name: sa-platform-staging
+    namespace: staging
+    path: p9/charts/sa-platform
+    valuesFiles:
+      - values.yaml
+      - values-staging.yaml

@@ -1,0 +1,57 @@
+# Velero Helm Chart Values - P9 Disaster Recovery
+initContainers:
+  - name: velero-plugin-for-gcp
+    image: velero/velero-plugin-for-gcp:v1.10.0
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+configuration:
+  backupStorageLocation:
+    - name: default
+      provider: gcp
+      bucket: sa-p9-velero-backups-202302220
+      config:
+        serviceAccount: sa-p9-velero@project-0d3c28c7-a4e0-44ad-a4e.iam.gserviceaccount.com
+  volumeSnapshotLocation:
+    - name: default
+      provider: gcp
+      config:
+        zone: us-central1-a
+  defaultVolumesToFsBackup: true
+
+credentials:
+  useSecret: true
+  existingSecret: cloud-credentials
+
+deployNodeAgent: true
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+nodeAgent:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+schedules:
+  sa-p9-backup-schedule:
+    disabled: false
+    schedule: "0 */6 * * *"
+    template:
+      includedNamespaces:
+        - produccion
+        - staging
+      ttl: 168h0m0s
+      snapshotVolumes: true
+      defaultVolumesToFsBackup: true
