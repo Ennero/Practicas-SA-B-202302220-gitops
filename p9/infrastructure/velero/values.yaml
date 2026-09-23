@@ -21,9 +21,15 @@ configuration:
         zone: us-central1-a
   defaultVolumesToFsBackup: true
 
+serviceAccount:
+  server:
+    create: true
+    name: velero
+    annotations:
+      iam.gke.io/gcp-service-account: sa-p9-velero@project-0d3c28c7-a4e0-44ad-a4e.iam.gserviceaccount.com
+
 credentials:
-  useSecret: true
-  existingSecret: cloud-credentials
+  useSecret: false
 
 deployNodeAgent: true
 
