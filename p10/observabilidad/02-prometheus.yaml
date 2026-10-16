@@ -1,0 +1,195 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: observabilidad
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 5s
+      evaluation_interval: 5s
+
+    rule_files:
+      - /etc/prometheus/rules/*.yaml
+
+    scrape_configs:
+      - job_name: "prometheus"
+        static_configs:
+          - targets: ["localhost:9090"]
+
+      - job_name: "otel-collector"
+        static_configs:
+          - targets: ["otel-collector.observabilidad.svc.cluster.local:8889"]
+
+      - job_name: "gateway"
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ["produccion"]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+            action: keep
+            regex: gateway
+          - source_labels: [__address__]
+            action: replace
+            regex: ([^:]+)(?::\d+)?
+            replacement: ${1}:8080
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_pod_label_rollouts_pod_template_hash]
+            target_label: rollouts_pod_template_hash
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+
+      - job_name: "cuentas"
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ["produccion"]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+            action: keep
+            regex: cuentas
+          - source_labels: [__address__]
+            action: replace
+            regex: ([^:]+)(?::\d+)?
+            replacement: ${1}:3002
+            target_label: __address__
+
+      - job_name: "transacciones"
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ["produccion"]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+            action: keep
+            regex: transacciones
+          - source_labels: [__address__]
+            action: replace
+            regex: ([^:]+)(?::\d+)?
+            replacement: ${1}:3004
+            target_label: __address__
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: observabilidad
+data:
+  slo-rules.yaml: |
+    groups:
+      - name: slo_sli_rules
+        rules:
+          - record: sli:disponibilidad:ratio_rate5m
+            expr: |
+              clamp_max(
+                (sum(rate(http_requests_total{status!~"5.."}[5m])) or vector(1))
+                /
+                (sum(rate(http_requests_total[5m])) or vector(1)),
+                1.0
+              )
+
+          - record: sli:latencia:p95_rate5m
+            expr: |
+              histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) or vector(0.05)
+
+          - record: sli:presupuesto:consumo_1h
+            expr: |
+              clamp_min((1 - (sum(rate(http_requests_total{status!~"5.."}[1h])) or vector(1)) / (sum(rate(http_requests_total[1h])) or vector(1))) / (1 - 0.995), 0)
+
+          - record: sli:presupuesto:consumo_6h
+            expr: |
+              clamp_min((1 - (sum(rate(http_requests_total{status!~"5.."}[6h])) or vector(1)) / (sum(rate(http_requests_total[6h])) or vector(1))) / (1 - 0.995), 0)
+
+          - alert: HighErrorBudgetBurn
+            expr: |
+              (sli:presupuesto:consumo_1h > 14.4 and sli:disponibilidad:ratio_rate5m < 0.995)
+              or
+              (sli:presupuesto:consumo_6h > 6 and sli:disponibilidad:ratio_rate5m < 0.995)
+            for: 1m
+            labels:
+              severity: critical
+              tier: platform
+            annotations:
+              summary: "Consumo crítico del presupuesto de error (Burn Rate elevado)"
+              description: "El ratio de consumo del presupuesto de error supera la tasa admisible para 1h/6h en la ventana móvil."
+              runbook: "docs/runbooks/high_error_budget_burn.md"
+              runbook_url: "https://github.com/Ennero/Practicas-SA-B-202302220/blob/feature/p10/P10/docs/runbooks/high_error_budget_burn.md"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: observabilidad
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prometheus
+    spec:
+      serviceAccountName: prometheus
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.51.0
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.enable-lifecycle"
+            - "--storage.tsdb.retention.time=15d"
+          ports:
+            - containerPort: 9090
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            - name: rules
+              mountPath: /etc/prometheus/rules
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+        - name: rules
+          configMap:
+            name: prometheus-rules
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-operated
+  namespace: observabilidad
+  labels:
+    app.kubernetes.io/name: prometheus
+spec:
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+  selector:
+    app.kubernetes.io/name: prometheus
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: observabilidad
+spec:
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+  selector:
+    app.kubernetes.io/name: prometheus

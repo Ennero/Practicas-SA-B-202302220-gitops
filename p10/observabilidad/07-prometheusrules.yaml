@@ -1,0 +1,47 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: slo-rules-observabilidad
+  namespace: observabilidad
+  labels:
+    app.kubernetes.io/part-of: sa-observability
+    role: alert-rules
+spec:
+  groups:
+    - name: slo_budget_rules
+      rules:
+        - record: sli:disponibilidad:ratio_rate5m
+          expr: |
+            clamp_max(
+              (sum(rate(http_requests_total{status!~"5.."}[5m])) or vector(1))
+              /
+              (sum(rate(http_requests_total[5m])) or vector(1)),
+              1.0
+            )
+
+        - record: sli:latencia:p95_rate5m
+          expr: |
+            histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) or vector(0.05)
+
+        - record: sli:presupuesto:consumo_1h
+          expr: |
+            clamp_min((1 - (sum(rate(http_requests_total{status!~"5.."}[1h])) or vector(1)) / (sum(rate(http_requests_total[1h])) or vector(1))) / (1 - 0.995), 0)
+
+        - record: sli:presupuesto:consumo_6h
+          expr: |
+            clamp_min((1 - (sum(rate(http_requests_total{status!~"5.."}[6h])) or vector(1)) / (sum(rate(http_requests_total[6h])) or vector(1))) / (1 - 0.995), 0)
+
+        - alert: HighErrorBudgetBurn
+          expr: |
+            (sli:presupuesto:consumo_1h > 14.4 and sli:disponibilidad:ratio_rate5m < 0.995)
+            or
+            (sli:presupuesto:consumo_6h > 6 and sli:disponibilidad:ratio_rate5m < 0.995)
+          for: 1m
+          labels:
+            severity: critical
+            tier: platform
+          annotations:
+            summary: "Consumo acelerado del presupuesto de error (Burn Rate elevado)"
+            description: "El ratio de consumo del presupuesto de error supera la tasa crítica para 1h/6h en la ventana móvil."
+            runbook: "docs/runbooks/high_error_budget_burn.md"
+            runbook_url: "https://github.com/Ennero/Practicas-SA-B-202302220/blob/feature/p10/P10/docs/runbooks/high_error_budget_burn.md"

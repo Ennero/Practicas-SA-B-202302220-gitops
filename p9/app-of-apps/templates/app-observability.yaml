@@ -1,0 +1,27 @@
+{{- if .Values.applications.observability.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.applications.observability.name }}
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sa-platform-root
+    course: sa-b-2026
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.spec.source.repoURL }}
+    targetRevision: {{ .Values.spec.source.targetRevision }}
+    path: {{ .Values.applications.observability.path }}
+  destination:
+    server: {{ .Values.spec.destination.server }}
+    namespace: {{ .Values.applications.observability.namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}

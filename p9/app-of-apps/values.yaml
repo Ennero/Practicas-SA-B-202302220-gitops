@@ -62,3 +62,10 @@ applications:
     valuesFiles:
       - values.yaml
       - values-staging.yaml
+
+  observability:
+    enabled: true
+    name: sa-observability
+    namespace: observabilidad
+    path: p10/observabilidad
+
