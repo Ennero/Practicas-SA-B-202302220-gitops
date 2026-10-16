@@ -36,7 +36,8 @@ spec:
             - name: default
               provider: gcp
               config:
-                zone: us-east1-b
+                snapshotLocation: us-east1
+                project: project-0d3c28c7-a4e0-44ad-a4e
           defaultVolumesToFsBackup: true
         serviceAccount:
           server:
@@ -60,8 +61,8 @@ spec:
               cpu: 5m
               memory: 32Mi
             limits:
-              cpu: 250m
-              memory: 256Mi
+              cpu: 500m
+              memory: 768Mi
         schedules:
           sa-p9-backup-schedule:
             disabled: false
