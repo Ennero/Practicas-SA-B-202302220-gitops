@@ -18,18 +18,26 @@ spec:
               (sum(rate(http_requests_total[5m])) or vector(1)),
               1.0
             )
+          annotations:
+            runbook: "docs/runbooks/high_error_budget_burn.md"
 
         - record: sli:latencia:p95_rate5m
           expr: |
             histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) or vector(0.05)
+          annotations:
+            runbook: "docs/runbooks/high_error_budget_burn.md"
 
         - record: sli:presupuesto:consumo_1h
           expr: |
             clamp_min((1 - (sum(rate(http_requests_total{status!~"5.."}[1h])) or vector(1)) / (sum(rate(http_requests_total[1h])) or vector(1))) / (1 - 0.995), 0)
+          annotations:
+            runbook: "docs/runbooks/high_error_budget_burn.md"
 
         - record: sli:presupuesto:consumo_6h
           expr: |
             clamp_min((1 - (sum(rate(http_requests_total{status!~"5.."}[6h])) or vector(1)) / (sum(rate(http_requests_total[6h])) or vector(1))) / (1 - 0.995), 0)
+          annotations:
+            runbook: "docs/runbooks/high_error_budget_burn.md"
 
         - alert: HighErrorBudgetBurn
           expr: |

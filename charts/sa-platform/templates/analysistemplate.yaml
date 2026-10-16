@@ -9,50 +9,28 @@ metadata:
     app.kubernetes.io/name: gateway-smoke-analysis
     app.kubernetes.io/instance: {{ $root.Release.Name }}
 spec:
+  args:
+    - name: canary-hash
   metrics:
-    - name: canary-health-check
-      interval: 5s
+    - name: success-rate
+      interval: 10s
       count: 2
-      successCondition: result == "0"
+      successCondition: len(result) > 0 && result[0] >= 0.95
       failureLimit: 1
       provider:
-        job:
-          spec:
-            backoffLimit: 1
-            template:
-              metadata:
-                labels:
-                  app.kubernetes.io/name: smoke-check-job
-              spec:
-                restartPolicy: Never
-                securityContext:
-                  runAsNonRoot: true
-                  runAsUser: 1000
-                containers:
-                  - name: smoke-curl
-                    image: curlimages/curl:8.7.1
-                    command: ["/bin/sh", "-c"]
-                    args:
-                      - |
-                        echo "Ejecutando prueba de humo contra pod canary..."
-                        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://gateway-canary:8080/health || echo "500")
-                        echo "Codigo HTTP recibido: $STATUS"
-                        if [ "$STATUS" = "200" ]; then
-                          echo "Canary saludable (HTTP 200). Paso de analisis exitoso."
-                          exit 0
-                        else
-                          echo "Fallo en validacion canary (HTTP $STATUS != 200). Abortando."
-                          exit 1
-                        fi
-                    resources:
-                      requests:
-                        cpu: 50m
-                        memory: 64Mi
-                      limits:
-                        cpu: 100m
-                        memory: 128Mi
-                    securityContext:
-                      allowPrivilegeEscalation: false
-                      readOnlyRootFilesystem: true
-                      capabilities:
-                        drop: ["ALL"]
+        prometheus:
+          address: http://prometheus-operated.observabilidad.svc.cluster.local:9090
+          query: |
+            (sum(rate(http_requests_total{status!~"5..",rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) or vector(1))
+            /
+            (sum(rate(http_requests_total{rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) or vector(1))
+    - name: latency-p95
+      interval: 10s
+      count: 2
+      successCondition: len(result) > 0 && result[0] <= 1.0
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://prometheus-operated.observabilidad.svc.cluster.local:9090
+          query: |
+            histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) by (le)) or vector(0.05)

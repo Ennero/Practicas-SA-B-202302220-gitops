@@ -23,15 +23,27 @@ spec:
         - analysis:
             templates:
               - templateName: {{ $service.name }}-smoke-analysis
+            args:
+              - name: canary-hash
+                valueFrom:
+                  podTemplateHashValue: Latest
         - setWeight: 50
         - pause: { duration: 15s }
         - analysis:
             templates:
               - templateName: {{ $service.name }}-smoke-analysis
+            args:
+              - name: canary-hash
+                valueFrom:
+                  podTemplateHashValue: Latest
         - setWeight: 100
         - analysis:
             templates:
               - templateName: {{ $service.name }}-smoke-analysis
+            args:
+              - name: canary-hash
+                valueFrom:
+                  podTemplateHashValue: Latest
 {{- else }}
 apiVersion: apps/v1
 kind: Deployment
