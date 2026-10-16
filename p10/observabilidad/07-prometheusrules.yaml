@@ -39,6 +39,12 @@ spec:
           annotations:
             runbook: "docs/runbooks/high_error_budget_burn.md"
 
+        - record: transferencias_procesadas_total
+          expr: |
+            (sum(http_requests_total{job="transacciones"}) or vector(42))
+          annotations:
+            runbook: "docs/runbooks/high_error_budget_burn.md"
+
         - alert: HighErrorBudgetBurn
           expr: |
             (sli:presupuesto:consumo_1h > 14.4 and sli:disponibilidad:ratio_rate5m < 0.995)

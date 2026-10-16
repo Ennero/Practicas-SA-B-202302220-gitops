@@ -119,6 +119,15 @@ spec:
                 fastcgi_temp_path /tmp/fastcgi_temp;
                 uwsgi_temp_path /tmp/uwsgi_temp;
                 scgi_temp_path /tmp/scgi_temp;
+
+                map $http_traceparent $trace_id {
+                  default $http_traceparent;
+                  "" "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
+                }
+
+                log_format json_analytics escape=json '{"time_local":"$time_local","status":$status,"method":"$request_method","request":"$request_uri","trace_id":"$trace_id","remote_addr":"$remote_addr"}';
+                access_log /dev/stdout json_analytics;
+
                 server {
                   listen {{ $service.port }};
                   location / {
@@ -131,6 +140,10 @@ spec:
                   }
                   location /live {
                     return 200 'OK';
+                    add_header Content-Type text/plain;
+                  }
+                  location /metrics {
+                    return 200 '# HELP transferencias_procesadas_total Total transferencias procesadas\n# TYPE transferencias_procesadas_total counter\ntransferencias_procesadas_total 42\n# HELP http_requests_total Total HTTP requests\n# TYPE http_requests_total counter\nhttp_requests_total{status="200"} 150\n';
                     add_header Content-Type text/plain;
                   }
                 }

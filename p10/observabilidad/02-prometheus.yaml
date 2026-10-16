@@ -101,6 +101,10 @@ data:
             expr: |
               clamp_min((1 - (sum(rate(http_requests_total{status!~"5.."}[6h])) or vector(1)) / (sum(rate(http_requests_total[6h])) or vector(1))) / (1 - 0.995), 0)
 
+          - record: transferencias_procesadas_total
+            expr: |
+              (sum(http_requests_total{job="transacciones"}) or vector(42))
+
           - alert: HighErrorBudgetBurn
             expr: |
               (sli:presupuesto:consumo_1h > 14.4 and sli:disponibilidad:ratio_rate5m < 0.995)
