@@ -108,6 +108,10 @@ nats:
     enabled: false
   serviceAccount:
     enabled: true
+  config:
+    cluster:
+      enabled: true
+      replicas: 3
     name: p5-nats
     merge:
       automountServiceAccountToken: false
