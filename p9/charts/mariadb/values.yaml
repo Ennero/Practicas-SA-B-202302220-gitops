@@ -1,4 +1,5 @@
 fullnameOverride: ""
+replicas: 2
 image:
   repository: mariadb
   tag: "11.4.5"

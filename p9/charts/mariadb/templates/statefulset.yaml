@@ -6,7 +6,7 @@ metadata:
     {{- include "mariadb.labels" . | nindent 4 }}
 spec:
   serviceName: {{ include "mariadb.fullname" . }}-headless
-  replicas: 1
+  replicas: {{ .Values.replicas | default 2 }}
   podManagementPolicy: OrderedReady
   selector:
     matchLabels:

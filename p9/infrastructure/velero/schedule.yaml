@@ -13,6 +13,7 @@ spec:
     includedNamespaces:
       - produccion
       - staging
+      - kube-system
     # Retención de 7 días (168 horas)
     ttl: 168h0m0s
     snapshotVolumes: true
