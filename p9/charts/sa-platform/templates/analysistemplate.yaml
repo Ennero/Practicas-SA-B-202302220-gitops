@@ -21,9 +21,9 @@ spec:
         prometheus:
           address: http://prometheus-operated.observabilidad.svc.cluster.local:9090
           query: |
-            (sum(rate(http_requests_total{status!~"5..",rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) or vector(1))
+            (sum(rate(http_requests_total{status!~"5..",rollouts_pod_template_hash='{{ `{{args.canary-hash}}` }}'}[1m])) or vector(1))
             /
-            (sum(rate(http_requests_total{rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) or vector(1))
+            (sum(rate(http_requests_total{rollouts_pod_template_hash='{{ `{{args.canary-hash}}` }}'}[1m])) or vector(1))
     - name: latency-p95
       interval: 10s
       count: 2
@@ -33,4 +33,4 @@ spec:
         prometheus:
           address: http://prometheus-operated.observabilidad.svc.cluster.local:9090
           query: |
-            histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) by (le)) or vector(0.05)
+            histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{rollouts_pod_template_hash='{{ `{{args.canary-hash}}` }}'}[1m])) by (le)) or vector(0.05)
