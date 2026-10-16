@@ -17,7 +17,7 @@ resources:
     cpu: 20m
     memory: 128Mi
   limits:
-    cpu: 250m
-    memory: 256Mi
+    cpu: 500m
+    memory: 512Mi
 service:
   port: 3306
