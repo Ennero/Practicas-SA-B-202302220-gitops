@@ -94,6 +94,9 @@ nats:
     merge:
       automountServiceAccountToken: false
   config:
+    cluster:
+      enabled: true
+      replicas: 3
     merge:
       authorization:
         token: ${NATS_TOKEN}

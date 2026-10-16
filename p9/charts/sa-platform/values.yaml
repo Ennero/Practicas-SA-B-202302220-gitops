@@ -115,8 +115,6 @@ nats:
     name: p5-nats
     merge:
       automountServiceAccountToken: false
-  config:
-    merge:
       authorization:
         token: ${NATS_TOKEN}
     jetstream:
