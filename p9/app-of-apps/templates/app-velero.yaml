@@ -49,19 +49,19 @@ spec:
         deployNodeAgent: true
         resources:
           requests:
-            cpu: 2m
-            memory: 32Mi
-          limits:
-            cpu: 250m
+            cpu: 50m
             memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1024Mi
         nodeAgent:
           resources:
             requests:
-              cpu: 2m
-              memory: 32Mi
+              cpu: 50m
+              memory: 256Mi
             limits:
               cpu: 500m
-              memory: 512Mi
+              memory: 1024Mi
         schedules:
           sa-p9-backup-schedule:
             disabled: false
@@ -69,6 +69,8 @@ spec:
             template:
               includedNamespaces:
                 - produccion
+                - staging
+                - kube-system
               storageLocation: default
               snapshotVolumes: true
               ttl: 168h0m0s
