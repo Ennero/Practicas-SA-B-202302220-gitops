@@ -143,7 +143,7 @@ spec:
                     add_header Content-Type text/plain;
                   }
                   location /metrics {
-                    return 200 '# HELP transferencias_procesadas_total Total transferencias procesadas\n# TYPE transferencias_procesadas_total counter\ntransferencias_procesadas_total 42\n# HELP http_requests_total Total HTTP requests\n# TYPE http_requests_total counter\nhttp_requests_total{status="200"} 150\n';
+                    return 200 '# HELP transferencias_procesadas_total Total transferencias procesadas\n# TYPE transferencias_procesadas_total counter\ntransferencias_procesadas_total 42\n# HELP http_requests_total Total HTTP requests\n# TYPE http_requests_total counter\nhttp_requests_total{status="200"} 150\n# HELP http_request_duration_seconds Latency in seconds\n# TYPE http_request_duration_seconds histogram\nhttp_request_duration_seconds_bucket{le="0.05"} 120\nhttp_request_duration_seconds_bucket{le="0.1"} 140\nhttp_request_duration_seconds_bucket{le="0.2"} 148\nhttp_request_duration_seconds_bucket{le="0.5"} 150\nhttp_request_duration_seconds_bucket{le="+Inf"} 150\nhttp_request_duration_seconds_sum 8.5\nhttp_request_duration_seconds_count 150\n';
                     add_header Content-Type text/plain;
                   }
                 }
