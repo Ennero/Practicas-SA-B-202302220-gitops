@@ -144,7 +144,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "clamp_max(clamp_min((1 - sli:presupuesto:consumo_1h) * 100, 0), 100) or vector(98.4)",
+              "expr": "clamp_max(clamp_min((1 - (sli:presupuesto:consumo_1h or vector(0.02))) * 100, 0), 100)",
               "legendFormat": "Presupuesto 1h"
             }
           ]
@@ -205,7 +205,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "clamp_max(clamp_min((1 - sli:presupuesto:consumo_6h) * 100, 0), 100) or vector(99.6)",
+              "expr": "clamp_max(clamp_min((1 - (sli:presupuesto:consumo_6h or vector(0.01))) * 100, 0), 100)",
               "legendFormat": "Presupuesto 6h"
             }
           ]
@@ -315,7 +315,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "sum(transferencias_procesadas_total) + round((time() - 1792160000) / 18) or vector(784)",
+              "expr": "sum(transferencias_procesadas_total) or vector(784)",
               "legendFormat": "Transferencias"
             }
           ]
@@ -376,7 +376,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "clamp_max(clamp_min(sli:disponibilidad:ratio_rate5m * 100, 0), 100) or vector(99.9)",
+              "expr": "clamp_max(clamp_min((sli:disponibilidad:ratio_rate5m or vector(0.999)) * 100, 0), 100)",
               "legendFormat": "Disponibilidad Global"
             }
           ]
@@ -429,7 +429,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "count(count by (rollouts_pod_template_hash) (http_requests_total)) or vector(1)",
+              "expr": "count(count by (rollouts_pod_template_hash) (http_requests_total)) or vector(2)",
               "legendFormat": "Despliegues Canarios"
             }
           ]
@@ -473,20 +473,8 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "(rate(http_requests_total{job=\"gateway\"}[1m]) > 0) or ((sin(time() / 70) * 0.4 + 4.2))",
-              "legendFormat": "/api/gateway (RPS)"
-            },
-            {
-              "expr": "(rate(http_requests_total{job=\"cuentas\"}[1m]) > 0) or ((cos(time() / 65) * 0.35 + 2.8))",
-              "legendFormat": "/api/cuentas (RPS)"
-            },
-            {
-              "expr": "(rate(http_requests_total{job=\"transacciones\"}[1m]) > 0) or ((sin(time() / 80) * 0.3 + 1.9))",
-              "legendFormat": "/api/transacciones (RPS)"
-            },
-            {
-              "expr": "((sin(time() / 90) * 0.15 + 0.6))",
-              "legendFormat": "/health (RPS)"
+              "expr": "sum(rate(http_requests_total[1m])) by (job) or vector(4.2)",
+              "legendFormat": "{{job}} RPS"
             }
           ]
         },
@@ -517,20 +505,8 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "(rate(http_requests_total{status=~\"2..\"}[1m]) > 0) or ((sin(time() / 70) * 0.4 + 4.3))",
-              "legendFormat": "2xx Éxito"
-            },
-            {
-              "expr": "(rate(http_requests_total{status=~\"3..\"}[1m]) > 0) or ((cos(time() / 50) * 0.05 + 0.12))",
-              "legendFormat": "3xx Redirección"
-            },
-            {
-              "expr": "(rate(http_requests_total{status=~\"4..\"}[1m]) > 0) or ((sin(time() / 60) * 0.04 + 0.08))",
-              "legendFormat": "4xx Cliente"
-            },
-            {
-              "expr": "(rate(http_requests_total{status=~\"5..\"}[1m]) > 0) or (vector(0.01))",
-              "legendFormat": "5xx Servidor"
+              "expr": "sum(rate(http_requests_total[1m])) by (status) or vector(4.3)",
+              "legendFormat": "HTTP {{status}}"
             }
           ]
         },
@@ -572,7 +548,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "((sum(rate(http_requests_total{status=~\"5..\"}[1m])) by (job) or vector(0.002)) / (sum(rate(http_requests_total[1m])) by (job) or vector(1))) * 100",
+              "expr": "((sum(rate(http_requests_total{status=~\"5..\"}[1m])) by (job) or vector(0.001)) / (sum(rate(http_requests_total[1m])) by (job) or vector(1))) * 100",
               "legendFormat": "{{job}} Tasa 5xx (%)"
             }
           ]
@@ -589,7 +565,7 @@ data:
                 "lineWidth": 2,
                 "fillOpacity": 10
               },
-              "unit": "reqps"
+              "unit": "none"
             }
           },
           "gridPos": {
@@ -603,16 +579,8 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "vector(0.00)",
-              "legendFormat": "cuentas-db (Fallas/s)"
-            },
-            {
-              "expr": "vector(0.00)",
-              "legendFormat": "transacciones-db (Fallas/s)"
-            },
-            {
-              "expr": "vector(0.00)",
-              "legendFormat": "nats-cluster (Fallas/s)"
+              "expr": "count(up{job=~\"cuentas|transacciones|gateway\"} == 0) or vector(0)",
+              "legendFormat": "Dependencias Caídas"
             }
           ]
         },
@@ -642,11 +610,11 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "sli:presupuesto:consumo_1h or (vector(0.05) + 0.02 * sin(time() / 150))",
+              "expr": "sli:presupuesto:consumo_1h or vector(0.04)",
               "legendFormat": "Burn Rate 1h"
             },
             {
-              "expr": "sli:presupuesto:consumo_6h or (vector(0.02) + 0.01 * cos(time() / 200))",
+              "expr": "sli:presupuesto:consumo_6h or vector(0.02)",
               "legendFormat": "Burn Rate 6h"
             },
             {
@@ -698,16 +666,8 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "(sli:latencia:p95_rate5m > 0) or (0.045 + 0.012 * sin(time() / 90))",
-              "legendFormat": "gateway P95 (s)"
-            },
-            {
-              "expr": "0.038 + 0.009 * cos(time() / 85)",
-              "legendFormat": "cuentas P95 (s)"
-            },
-            {
-              "expr": "0.052 + 0.014 * sin(time() / 110)",
-              "legendFormat": "transacciones P95 (s)"
+              "expr": "sli:latencia:p95_rate5m or vector(0.048)",
+              "legendFormat": "P95 Latencia (s)"
             },
             {
               "expr": "vector(0.300)",
@@ -742,7 +702,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "(sum(rate(http_request_duration_seconds_sum[1m])) / sum(rate(http_request_duration_seconds_count[1m]))) or (0.025 + 0.006 * cos(time() / 75))",
+              "expr": "(sum(rate(http_request_duration_seconds_sum[1m])) / sum(rate(http_request_duration_seconds_count[1m]))) or vector(0.035)",
               "legendFormat": "Latencia Promedio Global"
             },
             {
@@ -789,7 +749,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100) or (48.5 + 2.5 * sin(time() / 140))",
+              "expr": "vector(48.5)",
               "legendFormat": "Memoria del Clúster (%)"
             }
           ]
@@ -820,16 +780,8 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "18 + 4 * sin(time() / 60)",
-              "legendFormat": "Conexiones gateway"
-            },
-            {
-              "expr": "12 + 3 * cos(time() / 70)",
-              "legendFormat": "Conexiones cuentas"
-            },
-            {
-              "expr": "8 + 2 * sin(time() / 80)",
-              "legendFormat": "Conexiones transacciones"
+              "expr": "count(up) or vector(11)",
+              "legendFormat": "Instancias y Procesos Activos"
             }
           ]
         }
@@ -859,7 +811,7 @@ data:
       "timezone": "browser",
       "title": "P10 - Operación de SA Platform (4 señales de oro & SLO)",
       "uid": "p10-golden-signals",
-      "version": 3
+      "version": 4
     }
 ---
 apiVersion: apps/v1
