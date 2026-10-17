@@ -152,24 +152,24 @@ spec:
               mkdir -p /tmp/client_temp /tmp/proxy_temp /tmp/fastcgi_temp /tmp/uwsgi_temp /tmp/scgi_temp
 
               cat << 'MET' > /tmp/metrics.txt
-# HELP transferencias_procesadas_total Total transferencias procesadas
-# TYPE transferencias_procesadas_total counter
-transferencias_procesadas_total 42
-# HELP http_requests_total Total HTTP requests
-# TYPE http_requests_total counter
-http_requests_total{status="200"} 150
-http_requests_total{status="404"} 2
-http_requests_total{status="500"} 1
-# HELP http_request_duration_seconds Latency in seconds
-# TYPE http_request_duration_seconds histogram
-http_request_duration_seconds_bucket{le="0.05"} 120
-http_request_duration_seconds_bucket{le="0.1"} 140
-http_request_duration_seconds_bucket{le="0.2"} 148
-http_request_duration_seconds_bucket{le="0.5"} 150
-http_request_duration_seconds_bucket{le="+Inf"} 150
-http_request_duration_seconds_sum 8.5
-http_request_duration_seconds_count 150
-MET
+              # HELP transferencias_procesadas_total Total transferencias procesadas
+              # TYPE transferencias_procesadas_total counter
+              transferencias_procesadas_total 42
+              # HELP http_requests_total Total HTTP requests
+              # TYPE http_requests_total counter
+              http_requests_total{status="200"} 150
+              http_requests_total{status="404"} 2
+              http_requests_total{status="500"} 1
+              # HELP http_request_duration_seconds Latency in seconds
+              # TYPE http_request_duration_seconds histogram
+              http_request_duration_seconds_bucket{le="0.05"} 120
+              http_request_duration_seconds_bucket{le="0.1"} 140
+              http_request_duration_seconds_bucket{le="0.2"} 148
+              http_request_duration_seconds_bucket{le="0.5"} 150
+              http_request_duration_seconds_bucket{le="+Inf"} 150
+              http_request_duration_seconds_sum 8.5
+              http_request_duration_seconds_count 150
+              MET
 
               (
               REQ=150
@@ -183,24 +183,24 @@ MET
                 R4XX=$((REQ * 14 / 1000 + 1))
                 R5XX=$((REQ * 1 / 1000 + 1))
                 cat << MET > /tmp/metrics.txt.new
-# HELP transferencias_procesadas_total Total transferencias procesadas
-# TYPE transferencias_procesadas_total counter
-transferencias_procesadas_total $TRANS
-# HELP http_requests_total Total HTTP requests
-# TYPE http_requests_total counter
-http_requests_total{status="200"} $R2XX
-http_requests_total{status="404"} $R4XX
-http_requests_total{status="500"} $R5XX
-# HELP http_request_duration_seconds Latency in seconds
-# TYPE http_request_duration_seconds histogram
-http_request_duration_seconds_bucket{le="0.05"} $((REQ * 78 / 100))
-http_request_duration_seconds_bucket{le="0.1"} $((REQ * 93 / 100))
-http_request_duration_seconds_bucket{le="0.2"} $((REQ * 98 / 100))
-http_request_duration_seconds_bucket{le="0.5"} $REQ
-http_request_duration_seconds_bucket{le="+Inf"} $REQ
-http_request_duration_seconds_sum $((REQ * 48 / 1000))
-http_request_duration_seconds_count $REQ
-MET
+              # HELP transferencias_procesadas_total Total transferencias procesadas
+              # TYPE transferencias_procesadas_total counter
+              transferencias_procesadas_total $TRANS
+              # HELP http_requests_total Total HTTP requests
+              # TYPE http_requests_total counter
+              http_requests_total{status="200"} $R2XX
+              http_requests_total{status="404"} $R4XX
+              http_requests_total{status="500"} $R5XX
+              # HELP http_request_duration_seconds Latency in seconds
+              # TYPE http_request_duration_seconds histogram
+              http_request_duration_seconds_bucket{le="0.05"} $((REQ * 78 / 100))
+              http_request_duration_seconds_bucket{le="0.1"} $((REQ * 93 / 100))
+              http_request_duration_seconds_bucket{le="0.2"} $((REQ * 98 / 100))
+              http_request_duration_seconds_bucket{le="0.5"} $REQ
+              http_request_duration_seconds_bucket{le="+Inf"} $REQ
+              http_request_duration_seconds_sum $((REQ * 48 / 1000))
+              http_request_duration_seconds_count $REQ
+              MET
                 mv /tmp/metrics.txt.new /tmp/metrics.txt
               done
               ) &
