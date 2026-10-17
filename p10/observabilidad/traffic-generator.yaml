@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sa-traffic-generator
+  namespace: observabilidad
+  labels:
+    app.kubernetes.io/name: traffic-generator
+    app.kubernetes.io/part-of: sa-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: traffic-generator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: traffic-generator
+    spec:
+      containers:
+        - name: traffic-generator
+          image: curlimages/curl:8.6.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Starting continuous traffic generator against SA Platform services..."
+              while true; do
+                # Gateway requests (2xx)
+                curl -s -o /dev/null http://gateway.produccion.svc.cluster.local:8080/health
+                curl -s -o /dev/null http://gateway.produccion.svc.cluster.local:8080/live
+                curl -s -o /dev/null http://gateway.produccion.svc.cluster.local:8080/
+                curl -s -o /dev/null http://gateway.produccion.svc.cluster.local:8080/metrics
+
+                # Cuentas & Transacciones requests (2xx)
+                curl -s -o /dev/null http://cuentas.produccion.svc.cluster.local:3002/health
+                curl -s -o /dev/null http://cuentas.produccion.svc.cluster.local:3002/metrics
+                curl -s -o /dev/null http://transacciones.produccion.svc.cluster.local:3004/health
+                curl -s -o /dev/null http://transacciones.produccion.svc.cluster.local:3004/metrics
+
+                # Occasional 404 test path for client error metric
+                curl -s -o /dev/null http://gateway.produccion.svc.cluster.local:8080/api/v1/unknown-path
+
+                sleep 0.25
+              done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi

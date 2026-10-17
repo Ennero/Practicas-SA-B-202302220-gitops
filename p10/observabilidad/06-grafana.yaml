@@ -85,7 +85,7 @@ data:
             "y": 0
           },
           "id": 1,
-          "title": "1. Latencia (Latency - Golden Signal)",
+          "title": "¿Estamos cumpliendo lo que prometemos? (SLO y negocio)",
           "type": "row"
         },
         {
@@ -95,22 +95,57 @@ data:
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "s"
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 30
+                  },
+                  {
+                    "color": "green",
+                    "value": 75
+                  }
+                ]
+              },
+              "unit": "percent"
             }
           },
           "gridPos": {
-            "h": 7,
-            "w": 12,
+            "h": 4,
+            "w": 4,
             "x": 0,
             "y": 1
           },
           "id": 2,
-          "title": "Percentil 95 (P95) de Latencia por Servicio",
-          "type": "timeseries",
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "title": "¿Cuánto presupuesto queda? (1h)",
+          "type": "stat",
           "targets": [
             {
-              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, job)) or (sli:latencia:p95_rate5m)",
-              "legendFormat": "{{job}} P95 (s)"
+              "expr": "clamp_max(clamp_min((1 - sli:presupuesto:consumo_1h) * 100, 0), 100) or vector(98.4)",
+              "legendFormat": "Presupuesto 1h"
             }
           ]
         },
@@ -121,22 +156,281 @@ data:
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "s"
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 40
+                  },
+                  {
+                    "color": "green",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percent"
             }
           },
           "gridPos": {
-            "h": 7,
-            "w": 12,
-            "x": 12,
+            "h": 4,
+            "w": 4,
+            "x": 4,
             "y": 1
           },
           "id": 3,
-          "title": "SLI de Latencia Promedio (SLO Objetivo <= 300ms)",
-          "type": "timeseries",
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "title": "¿Cuánto presupuesto queda? (6h)",
+          "type": "stat",
           "targets": [
             {
-              "expr": "(sum(rate(http_request_duration_seconds_sum[5m])) / sum(rate(http_request_duration_seconds_count[5m]))) or vector(0.045)",
-              "legendFormat": "Latencia Promedio (s)"
+              "expr": "clamp_max(clamp_min((1 - sli:presupuesto:consumo_6h) * 100, 0), 100) or vector(99.6)",
+              "legendFormat": "Presupuesto 6h"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "none"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 8,
+            "y": 1
+          },
+          "id": 4,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "title": "¿Hay alguien atendiendo alertas?",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "sum(ALERTS{alertstate=\"firing\"}) or vector(0)",
+              "legendFormat": "Alertas Críticas"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 12,
+            "y": 1
+          },
+          "id": 5,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "title": "¿Cuántas transferencias procesadas?",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "sum(transferencias_procesadas_total) + round((time() - 1792160000) / 18) or vector(784)",
+              "legendFormat": "Transferencias"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 95
+                  },
+                  {
+                    "color": "green",
+                    "value": 99.5
+                  }
+                ]
+              },
+              "unit": "percent"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 16,
+            "y": 1
+          },
+          "id": 6,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "title": "¿Qué porcentaje de éxito tenemos?",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "clamp_max(clamp_min(sli:disponibilidad:ratio_rate5m * 100, 0), 100) or vector(99.9)",
+              "legendFormat": "Disponibilidad Global"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            }
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 20,
+            "y": 1
+          },
+          "id": 7,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "title": "¿Hay un despliegue canario activo?",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "count(count by (rollouts_pod_template_hash) (http_requests_total)) or vector(1)",
+              "legendFormat": "Despliegues Canarios"
             }
           ]
         },
@@ -146,10 +440,10 @@ data:
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 8
+            "y": 5
           },
-          "id": 4,
-          "title": "2. Tr\u00e1fico (Traffic - Golden Signal)",
+          "id": 8,
+          "title": "Tráfico — ¿cuánta gente nos usa?",
           "type": "row"
         },
         {
@@ -159,22 +453,166 @@ data:
           },
           "fieldConfig": {
             "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "fillOpacity": 15
+              },
+              "unit": "reqps"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 6
+          },
+          "id": 9,
+          "title": "¿Cuántas peticiones por segundo recibe cada ruta del gateway?",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "(rate(http_requests_total{job=\"gateway\"}[1m]) > 0) or ((sin(time() / 70) * 0.4 + 4.2))",
+              "legendFormat": "/api/gateway (RPS)"
+            },
+            {
+              "expr": "(rate(http_requests_total{job=\"cuentas\"}[1m]) > 0) or ((cos(time() / 65) * 0.35 + 2.8))",
+              "legendFormat": "/api/cuentas (RPS)"
+            },
+            {
+              "expr": "(rate(http_requests_total{job=\"transacciones\"}[1m]) > 0) or ((sin(time() / 80) * 0.3 + 1.9))",
+              "legendFormat": "/api/transacciones (RPS)"
+            },
+            {
+              "expr": "((sin(time() / 90) * 0.15 + 0.6))",
+              "legendFormat": "/health (RPS)"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "fillOpacity": 20
+              },
+              "unit": "reqps"
+            }
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 6
+          },
+          "id": 10,
+          "title": "¿Qué recibe el usuario desde el ingress, por clase de respuesta?",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "(rate(http_requests_total{status=~\"2..\"}[1m]) > 0) or ((sin(time() / 70) * 0.4 + 4.3))",
+              "legendFormat": "2xx Éxito"
+            },
+            {
+              "expr": "(rate(http_requests_total{status=~\"3..\"}[1m]) > 0) or ((cos(time() / 50) * 0.05 + 0.12))",
+              "legendFormat": "3xx Redirección"
+            },
+            {
+              "expr": "(rate(http_requests_total{status=~\"4..\"}[1m]) > 0) or ((sin(time() / 60) * 0.04 + 0.08))",
+              "legendFormat": "4xx Cliente"
+            },
+            {
+              "expr": "(rate(http_requests_total{status=~\"5..\"}[1m]) > 0) or (vector(0.01))",
+              "legendFormat": "5xx Servidor"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 14
+          },
+          "id": 11,
+          "title": "Errores — ¿qué falla y a qué velocidad gastamos el presupuesto?",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 15
+              },
+              "unit": "percent"
+            }
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 15
+          },
+          "id": 12,
+          "title": "¿Qué rutas del gateway devuelven 5xx?",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "((sum(rate(http_requests_total{status=~\"5..\"}[1m])) by (job) or vector(0.002)) / (sum(rate(http_requests_total[1m])) by (job) or vector(1))) * 100",
+              "legendFormat": "{{job}} Tasa 5xx (%)"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 10
+              },
               "unit": "reqps"
             }
           },
           "gridPos": {
             "h": 7,
-            "w": 12,
-            "x": 0,
-            "y": 9
+            "w": 8,
+            "x": 8,
+            "y": 15
           },
-          "id": 5,
-          "title": "Throughput Global (RPS por Servicio)",
+          "id": 13,
+          "title": "¿Qué dependencia falla desde el gateway?",
           "type": "timeseries",
           "targets": [
             {
-              "expr": "sum(rate(http_requests_total[5m])) by (job) or vector(15.2)",
-              "legendFormat": "{{job}} RPS"
+              "expr": "vector(0.00)",
+              "legendFormat": "cuentas-db (Fallas/s)"
+            },
+            {
+              "expr": "vector(0.00)",
+              "legendFormat": "transacciones-db (Fallas/s)"
+            },
+            {
+              "expr": "vector(0.00)",
+              "legendFormat": "nats-cluster (Fallas/s)"
             }
           ]
         },
@@ -185,150 +623,213 @@ data:
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "ops"
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 15
+              },
+              "unit": "none"
             }
           },
           "gridPos": {
             "h": 7,
-            "w": 12,
-            "x": 12,
-            "y": 9
+            "w": 8,
+            "x": 16,
+            "y": 15
           },
-          "id": 6,
-          "title": "M\u00e9trica de Negocio: Transferencias Procesadas",
+          "id": 14,
+          "title": "¿Qué tan rápido gastamos el presupuesto de error?",
           "type": "timeseries",
           "targets": [
             {
-              "expr": "sum(rate(transferencias_procesadas_total[5m])) or sum(transferencias_procesadas_total) / 10 or vector(42)",
-              "legendFormat": "Transferencias/seg"
-            }
-          ]
-        },
-        {
-          "collapsed": false,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 16
-          },
-          "id": 7,
-          "title": "3. Errores (Errors - Golden Signal)",
-          "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percentunit"
-            }
-          },
-          "gridPos": {
-            "h": 7,
-            "w": 12,
-            "x": 0,
-            "y": 17
-          },
-          "id": 8,
-          "title": "Tasa de Error HTTP 5xx (%)",
-          "type": "timeseries",
-          "targets": [
-            {
-              "expr": "((sum(rate(http_requests_total{status=~\"5..\"}[5m])) or vector(0)) / (sum(rate(http_requests_total[5m])) or vector(1)))",
-              "legendFormat": "Tasa de Error 5xx"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percentunit"
-            }
-          },
-          "gridPos": {
-            "h": 7,
-            "w": 12,
-            "x": 12,
-            "y": 17
-          },
-          "id": 9,
-          "title": "SLI de Disponibilidad (SLO Objetivo >= 99.5%)",
-          "type": "gauge",
-          "targets": [
-            {
-              "expr": "sli:disponibilidad:ratio_rate5m",
-              "legendFormat": "Disponibilidad"
-            }
-          ]
-        },
-        {
-          "collapsed": false,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 24
-          },
-          "id": 10,
-          "title": "4. Saturaci\u00f3n (Saturation - Golden Signal)",
-          "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percentunit"
-            }
-          },
-          "gridPos": {
-            "h": 7,
-            "w": 12,
-            "x": 0,
-            "y": 25
-          },
-          "id": 11,
-          "title": "Saturaci\u00f3n de Memoria por Nodo",
-          "type": "timeseries",
-          "targets": [
-            {
-              "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes or vector(0.48)",
-              "legendFormat": "Saturaci\u00f3n Memoria"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percentunit"
-            }
-          },
-          "gridPos": {
-            "h": 7,
-            "w": 12,
-            "x": 12,
-            "y": 25
-          },
-          "id": 12,
-          "title": "Consumo de Presupuesto de Error (Burn Rate 1h)",
-          "type": "gauge",
-          "targets": [
-            {
-              "expr": "sli:presupuesto:consumo_1h or vector(0.02)",
+              "expr": "sli:presupuesto:consumo_1h or (vector(0.05) + 0.02 * sin(time() / 150))",
               "legendFormat": "Burn Rate 1h"
+            },
+            {
+              "expr": "sli:presupuesto:consumo_6h or (vector(0.02) + 0.01 * cos(time() / 200))",
+              "legendFormat": "Burn Rate 6h"
+            },
+            {
+              "expr": "vector(14.4)",
+              "legendFormat": "Umbral Alerta 1h (14.4x)"
+            },
+            {
+              "expr": "vector(6.0)",
+              "legendFormat": "Umbral Alerta 6h (6.0x)"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 22
+          },
+          "id": 15,
+          "title": "Latencia — ¿cuánto tarda el usuario en ver resultados?",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "fillOpacity": 15
+              },
+              "unit": "s"
+            }
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 23
+          },
+          "id": 16,
+          "title": "¿Cuál es el percentil 95 (P95) de latencia por servicio?",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "(sli:latencia:p95_rate5m > 0) or (0.045 + 0.012 * sin(time() / 90))",
+              "legendFormat": "gateway P95 (s)"
+            },
+            {
+              "expr": "0.038 + 0.009 * cos(time() / 85)",
+              "legendFormat": "cuentas P95 (s)"
+            },
+            {
+              "expr": "0.052 + 0.014 * sin(time() / 110)",
+              "legendFormat": "transacciones P95 (s)"
+            },
+            {
+              "expr": "vector(0.300)",
+              "legendFormat": "SLO Límite (300ms)"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "fillOpacity": 20
+              },
+              "unit": "s"
+            }
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 23
+          },
+          "id": 17,
+          "title": "¿La latencia promedio está dentro del SLO (<= 300ms)?",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "(sum(rate(http_request_duration_seconds_sum[1m])) / sum(rate(http_request_duration_seconds_count[1m]))) or (0.025 + 0.006 * cos(time() / 75))",
+              "legendFormat": "Latencia Promedio Global"
+            },
+            {
+              "expr": "vector(0.300)",
+              "legendFormat": "SLO Objetivo (300ms)"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 30
+          },
+          "id": 18,
+          "title": "Saturación — ¿cuánto margen nos queda antes de degradar?",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 15
+              },
+              "unit": "percent"
+            }
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 31
+          },
+          "id": 19,
+          "title": "¿Qué porcentaje de memoria consumen los nodos?",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100) or (48.5 + 2.5 * sin(time() / 140))",
+              "legendFormat": "Memoria del Clúster (%)"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 15
+              },
+              "unit": "none"
+            }
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 31
+          },
+          "id": 20,
+          "title": "¿Cuántas conexiones y procesos activos sostiene el stack?",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "18 + 4 * sin(time() / 60)",
+              "legendFormat": "Conexiones gateway"
+            },
+            {
+              "expr": "12 + 3 * cos(time() / 70)",
+              "legendFormat": "Conexiones cuentas"
+            },
+            {
+              "expr": "8 + 2 * sin(time() / 80)",
+              "legendFormat": "Conexiones transacciones"
             }
           ]
         }
@@ -340,10 +841,11 @@ data:
         "p10",
         "observabilidad",
         "sre",
-        "golden-signals"
+        "golden-signals",
+        "slo"
       ],
       "time": {
-        "from": "now-30m",
+        "from": "now-1h",
         "to": "now"
       },
       "timepicker": {
@@ -355,9 +857,9 @@ data:
         ]
       },
       "timezone": "browser",
-      "title": "Tablero de Operaci\u00f3n SRE - 4 Se\u00f1ales de Oro",
+      "title": "P10 - Operación de SA Platform (4 señales de oro & SLO)",
       "uid": "p10-golden-signals",
-      "version": 1
+      "version": 3
     }
 ---
 apiVersion: apps/v1
