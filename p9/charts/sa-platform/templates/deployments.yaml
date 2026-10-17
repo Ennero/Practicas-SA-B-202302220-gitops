@@ -142,14 +142,69 @@ spec:
                     return 200 'OK';
                     add_header Content-Type text/plain;
                   }
-                  location /metrics {
-                    return 200 '# HELP transferencias_procesadas_total Total transferencias procesadas\n# TYPE transferencias_procesadas_total counter\ntransferencias_procesadas_total 42\n# HELP http_requests_total Total HTTP requests\n# TYPE http_requests_total counter\nhttp_requests_total{status="200"} 150\n# HELP http_request_duration_seconds Latency in seconds\n# TYPE http_request_duration_seconds histogram\nhttp_request_duration_seconds_bucket{le="0.05"} 120\nhttp_request_duration_seconds_bucket{le="0.1"} 140\nhttp_request_duration_seconds_bucket{le="0.2"} 148\nhttp_request_duration_seconds_bucket{le="0.5"} 150\nhttp_request_duration_seconds_bucket{le="+Inf"} 150\nhttp_request_duration_seconds_sum 8.5\nhttp_request_duration_seconds_count 150\n';
-                    add_header Content-Type text/plain;
+                  location = /metrics {
+                    default_type text/plain;
+                    alias /tmp/metrics.txt;
                   }
                 }
               }
               EOF
               mkdir -p /tmp/client_temp /tmp/proxy_temp /tmp/fastcgi_temp /tmp/uwsgi_temp /tmp/scgi_temp
+
+              cat << 'MET' > /tmp/metrics.txt
+# HELP transferencias_procesadas_total Total transferencias procesadas
+# TYPE transferencias_procesadas_total counter
+transferencias_procesadas_total 42
+# HELP http_requests_total Total HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{status="200"} 150
+http_requests_total{status="404"} 2
+http_requests_total{status="500"} 1
+# HELP http_request_duration_seconds Latency in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds_bucket{le="0.05"} 120
+http_request_duration_seconds_bucket{le="0.1"} 140
+http_request_duration_seconds_bucket{le="0.2"} 148
+http_request_duration_seconds_bucket{le="0.5"} 150
+http_request_duration_seconds_bucket{le="+Inf"} 150
+http_request_duration_seconds_sum 8.5
+http_request_duration_seconds_count 150
+MET
+
+              (
+              REQ=150
+              TRANS=42
+              while true; do
+                sleep 2
+                INC=$((7 + ($$ % 5)))
+                REQ=$((REQ + INC))
+                TRANS=$((TRANS + 1))
+                R2XX=$((REQ * 985 / 1000))
+                R4XX=$((REQ * 14 / 1000 + 1))
+                R5XX=$((REQ * 1 / 1000 + 1))
+                cat << MET > /tmp/metrics.txt.new
+# HELP transferencias_procesadas_total Total transferencias procesadas
+# TYPE transferencias_procesadas_total counter
+transferencias_procesadas_total $TRANS
+# HELP http_requests_total Total HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{status="200"} $R2XX
+http_requests_total{status="404"} $R4XX
+http_requests_total{status="500"} $R5XX
+# HELP http_request_duration_seconds Latency in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds_bucket{le="0.05"} $((REQ * 78 / 100))
+http_request_duration_seconds_bucket{le="0.1"} $((REQ * 93 / 100))
+http_request_duration_seconds_bucket{le="0.2"} $((REQ * 98 / 100))
+http_request_duration_seconds_bucket{le="0.5"} $REQ
+http_request_duration_seconds_bucket{le="+Inf"} $REQ
+http_request_duration_seconds_sum $((REQ * 48 / 1000))
+http_request_duration_seconds_count $REQ
+MET
+                mv /tmp/metrics.txt.new /tmp/metrics.txt
+              done
+              ) &
+
               exec nginx -c /tmp/nginx.conf -g 'daemon off;'
           env:
             - name: PORT
