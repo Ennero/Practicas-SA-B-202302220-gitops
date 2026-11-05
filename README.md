@@ -1,23 +1,6 @@
-<div align="center">
+# Despliegue bancario con Helm, ArgoCD y Argo Rollouts
 
-# ☸️ GitOps Deployment Pipeline & Kubernetes Manifests (SA)
-
-**Configuración de pipelines GitOps con Kubernetes, ArgoCD/Helm y despliegues declarativos automatizados.**
-
-[![Language](https://img.shields.io/badge/Language-YAML,%20Kubernetes,%20Go%20Template-blue?style=for-the-badge)](https://github.com/Ennero/Practicas-SA-B-202302220-gitops)
-[![Course](https://img.shields.io/badge/Course-Software%20Avanzado-003366?style=for-the-badge)](https://ingenieria.usac.edu.gt/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-
-</div>
-
----
-
-
-## 📌 Contexto Académico
-
-Proyecto desarrollado en el marco del curso **Software Avanzado** de la carrera de Ingeniería en Ciencias y Sistemas en la Universidad de San Carlos de Guatemala (USAC).
-
----
+Repositorio declarativo de despliegue de una plataforma bancaria: charts Helm, aplicaciones ArgoCD, entrega progresiva y configuración de entornos.
 
 Este repositorio es la **única fuente de verdad** declarativa para el despliegue del ecosistema de microservicios bancarios sobre Kubernetes (GKE) mediante **ArgoCD**.
 
@@ -50,15 +33,19 @@ Este repositorio es la **única fuente de verdad** declarativa para el despliegu
 2. Al fusionarse el Pull Request en la rama `main`, **ArgoCD** detecta la divergencia y reconcilia el clúster automáticamente (`selfHeal: true`).
 3. **Argo Rollouts** ejecuta la entrega progresiva Canary (20% -> Análisis -> 50% -> Análisis -> 100%) validando cada fase contra el `AnalysisTemplate`.
 
----
 
-## 📄 Licencia
+## Preparación y validación local
 
-Este proyecto está bajo la Licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+Requiere Helm 3, kubectl y, para desplegar, un clúster con ArgoCD, Argo Rollouts y Sealed Secrets instalados. Los manifiestos no instalan esos controladores. La aplicación bancaria proviene del repositorio [Practicas-SA-B-202302220](https://github.com/Ennero/Practicas-SA-B-202302220).
 
----
+Desde la raíz, sin aplicar recursos al clúster:
 
-## 👨‍💻 Autor
+```bash
+helm dependency build charts/sa-platform
+helm lint charts/sa-platform -f charts/sa-platform/values-staging.yaml
+helm template sa-platform charts/sa-platform -f charts/sa-platform/values-staging.yaml > staging-rendered.yaml
+```
 
-- **Enner Mendizabal** - [@Ennero](https://github.com/Ennero)  
-- *Facultad de Ingeniería, Universidad de San Carlos de Guatemala.*
+Revisar imágenes, dominios, namespaces y referencias de secretos en el YAML generado. Los SealedSecrets existentes solo pueden descifrarse con el controlador que conserva la clave correspondiente: para un clúster nuevo, crear y sellar secretos propios. No distribuir esa clave privada en el repositorio.
+
+Después de preparar y revisar un clúster de pruebas, `argocd/application-staging.yaml` define la aplicación staging. Su política automatizada incluye `prune` y `selfHeal`; aplicarla únicamente al entorno previsto. Producción usa un manifiesto independiente.
